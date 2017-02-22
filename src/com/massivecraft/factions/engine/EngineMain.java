@@ -2,26 +2,12 @@ package com.massivecraft.factions.engine;
 
 import java.io.File;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import mkremins.fanciful.FancyMessage;
 
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
@@ -135,6 +121,10 @@ public class EngineMain extends EngineAbstract {
 
 	private static EngineMain i = new EngineMain();
 
+	private ArrayList<UUID> playersFlying = new ArrayList<UUID>();
+	private ArrayList<UUID> playersFlyingAOE = new ArrayList<UUID>();
+	private ArrayList<UUID> noFallDamagePlayers = new ArrayList<UUID>();
+	public static ArrayList<UUID> stealthPlayer = new ArrayList<UUID>();
 	public static Map<String, Location> assistFactions = new HashMap<String, Location>();
 	public static ArrayList<Location> removeBanners = new ArrayList<Location>();
 
@@ -905,6 +895,143 @@ public class EngineMain extends EngineAbstract {
 	}
 
 	// -------------------------------------------- //
+	// FLY
+	// -------------------------------------------- //
+
+	// FLY
+	public void onPlayerMove(PlayerMoveEvent e, Faction fac, MPlayer mp) {
+		Location loc = e.getTo();
+		Player p = e.getPlayer();
+		Faction faction = mp.getFaction();
+
+		Rel rel = fac.getRelationTo(faction);
+
+		int howCloseToAOE = MConf.get().flyAOEDistance;
+		int enemyX = MConf.get().flyCancelDistanceX;
+		int enemyY = MConf.get().flyCancelDistanceY;
+		int enemyZ = MConf.get().flyCancelDistanceZ;
+
+		Collection<Entity> closeEntities = loc.getWorld().getNearbyEntities(
+				loc, enemyX, enemyY, enemyZ);
+		Collection<Entity> closeAOE = loc.getWorld().getNearbyEntities(loc,
+				howCloseToAOE, enemyY, howCloseToAOE);
+
+		if (!(rel.getValue() >= Rel.ALLY.getValue())
+				&& playersFlying.contains(p.getUniqueId())
+				&& p.getGameMode() != GameMode.CREATIVE) {
+			takeAwayFly(p);
+			return;
+		}
+		if (fac.isNone() && playersFlying.contains(p.getUniqueId())
+				&& p.getGameMode() != GameMode.CREATIVE) {
+			takeAwayFly(p);
+			return;
+		}
+		if (faction.isNone()) {
+			if (playersFlying.contains(p.getUniqueId())
+					&& p.getGameMode() != GameMode.CREATIVE) {
+				takeAwayFly(p);
+			}
+			return;
+		}
+		boolean closeEnemy = false;
+		for (Entity entity : closeEntities) {
+			if (!(entity instanceof Player))
+				continue;
+			Player player = (Player) entity;
+			Faction opFaction = MPlayer.get(player).getFaction();
+			Rel relation = opFaction.getRelationTo(faction);
+			if (relation.getValue() >= Rel.TRUCE.getValue()
+					|| player.hasPermission("factions.fly.bypass")) {
+				continue;
+			} else
+				closeEnemy = true;
+			if (playersFlying.contains(player.getUniqueId())
+					& !p.hasPermission("factions.fly.bypass")
+					& !stealthPlayer.contains(p.getUniqueId())
+					&& player.getGameMode() != GameMode.CREATIVE) {
+				takeAwayFly(player);
+				return;
+			}
+			if (playersFlying.contains(p.getUniqueId())
+					& !player.hasPermission("factions.fly.bypass")
+					& !stealthPlayer.contains(player.getUniqueId())
+					&& p.getGameMode() != GameMode.CREATIVE) {
+				takeAwayFly(p);
+				return;
+			}
+		}
+		if (!closeEnemy && p.hasPermission("factions.fly")
+				&& (rel.getValue() >= Rel.ALLY.getValue())
+				& !playersFlying.contains(p.getUniqueId())) {
+			p.sendMessage(ChatColor.translateAlternateColorCodes('&',
+					MConf.get().flyEnableMessage));
+			p.setAllowFlight(true);
+			playersFlying.add(p.getUniqueId());
+			noFallDamagePlayers.add(p.getUniqueId());
+			return;
+		}
+		boolean foundAOE = false;
+		for (Entity entity : closeAOE) {
+			if (!(entity instanceof Player))
+				continue;
+			Player player = (Player) entity;
+			Faction opFaction = MPlayer.get(player).getFaction();
+			Rel relation = opFaction.getRelationTo(faction);
+			if (relation.getValue() >= Rel.ALLY.getValue()
+					&& player.hasPermission("factions.fly.aoe")) {
+				if (!closeEnemy && (rel.getValue() >= Rel.ALLY.getValue())
+						& !playersFlying.contains(p.getUniqueId())) {
+					p.sendMessage(ChatColor.translateAlternateColorCodes('&',
+							MConf.get().flyEnableMessage));
+					p.setAllowFlight(true);
+					foundAOE = true;
+					playersFlyingAOE.add(p.getUniqueId());
+					playersFlying.add(p.getUniqueId());
+					noFallDamagePlayers.add(p.getUniqueId());
+				}
+				foundAOE = true;
+				break;
+			}
+		}
+		if (!foundAOE && playersFlyingAOE.contains(p.getUniqueId())
+				&& p.getGameMode() != GameMode.CREATIVE) {
+			takeAwayFly(p);
+		}
+	}
+
+	public void takeAwayFly(final Player p) {
+		if (playersFlying.contains(p.getUniqueId())) {
+			playersFlying.remove(p.getUniqueId());
+		}
+		if (playersFlyingAOE.contains(p.getUniqueId())) {
+			playersFlyingAOE.remove(p.getUniqueId());
+		}
+		if (p.isFlying())
+			p.sendMessage(ChatColor.translateAlternateColorCodes('&',
+					MConf.get().flyCancelMessage));
+		p.setAllowFlight(false);
+		new BukkitRunnable() {
+
+			@Override
+			public void run() {
+				if (noFallDamagePlayers.contains(p.getUniqueId()))
+					noFallDamagePlayers.remove(p.getUniqueId());
+			}
+		}.runTaskLater(getPlugin(), 20 * 10);
+	}
+
+	public void fallDamageHandler(EntityDamageEvent e) {
+		if (e.getEntity() instanceof Player) {
+			Player p = (Player) e.getEntity();
+			if (e.getCause() == DamageCause.FALL
+					&& noFallDamagePlayers.contains(p.getUniqueId())) {
+				e.setCancelled(true);
+			}
+		}
+	}
+
+	// -------------------------------------------- //
 	// CHUNK CHANGE: DETECT
 	// -------------------------------------------- //
 
@@ -924,6 +1051,8 @@ public class EngineMain extends EngineAbstract {
 
 		Faction factionFrom = BoardColl.get().getFactionAt(chunkFrom);
 		Faction factionTo = BoardColl.get().getFactionAt(chunkTo);
+
+		onPlayerMove(event, factionTo, mplayer);
 
 		if (MUtil.isSameChunk(event))
 			return;
@@ -1072,6 +1201,7 @@ public class EngineMain extends EngineAbstract {
 
 	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
 	public void canCombatDamageHappen(EntityDamageEvent event) {
+		fallDamageHandler(event);
 		// TODO: Can't we just listen to the class type the sub is of?
 		if (!(event instanceof EntityDamageByEntityEvent))
 			return;

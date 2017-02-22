@@ -19,6 +19,7 @@ public class CmdFactions extends FactionsCommand {
 	public CmdFactionsJoin cmdFactionsJoin = new CmdFactionsJoin();
 	public CmdFactionsLeave cmdFactionsLeave = new CmdFactionsLeave();
 	public CmdFactionsHome cmdFactionsHome = new CmdFactionsHome();
+	public CmdFactionsStealth cmdFactionsStealth = new CmdFactionsStealth();
 	public CmdFactionsWild cmdFactionsWild = new CmdFactionsWild();
 	public CmdFactionsWarp cmdFactionsWarp = new CmdFactionsWarp();
 	public CmdFactionsListwarps cmdFactionsListwarps = new CmdFactionsListwarps();
@@ -93,6 +94,7 @@ public class CmdFactions extends FactionsCommand {
 		this.addChild(this.cmdFactionsJoin);
 		this.addChild(this.cmdFactionsLeave);
 		this.addChild(this.cmdFactionsHome);
+		this.addChild(this.cmdFactionsStealth);
 		this.addChild(this.cmdFactionsWild);
 		this.addChild(this.cmdFactionsWarp);
 		this.addChild(this.cmdFactionsListwarps);
