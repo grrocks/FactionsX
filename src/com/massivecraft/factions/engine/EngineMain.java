@@ -446,6 +446,15 @@ public class EngineMain extends EngineAbstract {
 		for (Player p : faction.getOnlinePlayers()) {
 			p.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
 		}
+		if (playersFlying.contains(e.getPlayer().getUniqueId())) {
+			playersFlying.remove(e.getPlayer().getUniqueId());
+		}
+		if (playersFlyingAOE.contains(e.getPlayer().getUniqueId())) {
+			playersFlyingAOE.remove(e.getPlayer().getUniqueId());
+		}
+		if (noFallDamagePlayers.contains(e.getPlayer().getUniqueId())) {
+			noFallDamagePlayers.remove(e.getPlayer().getUniqueId());
+		}
 	}
 
 	// VoidChest
@@ -454,8 +463,12 @@ public class EngineMain extends EngineAbstract {
 		if (e.getInitiator() == null || e.getSource() == null
 				|| e.getItem() == null)
 			return;
-		if (e.getInitiator().getType() != InventoryType.HOPPER)
+		if (e.getInitiator().getType() != InventoryType.HOPPER){
+			if(e.getInitiator().getType() == InventoryType.CHEST
+					&& e.getInitiator().getTitle().equals(ChatColor.DARK_AQUA + "Void Chest"))
+				e.setCancelled(true);
 			return;
+		}
 
 		if (!e.getDestination().getTitle()
 				.equals(ChatColor.DARK_AQUA + "Void Chest"))
@@ -710,7 +723,7 @@ public class EngineMain extends EngineAbstract {
 	// CHUNK CHANGE: DETECT
 	// -------------------------------------------- //
 
-	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
 	public void onChunksChange(EventFactionsChunksChange event) {
 		// For security reasons we block the chunk change on any error since an
 		// error might block security checks from happening.
@@ -911,18 +924,20 @@ public class EngineMain extends EngineAbstract {
 		int enemyY = MConf.get().flyCancelDistanceY;
 		int enemyZ = MConf.get().flyCancelDistanceZ;
 
-		Collection<Entity> closeEntities = loc.getWorld().getNearbyEntities(
-				loc, enemyX, enemyY, enemyZ);
-		Collection<Entity> closeAOE = loc.getWorld().getNearbyEntities(loc,
-				howCloseToAOE, enemyY, howCloseToAOE);
-
-		if (!(rel.getValue() >= Rel.ALLY.getValue())
+		if (!canGoInTerritory(rel, mp)
 				&& playersFlying.contains(p.getUniqueId())
 				&& p.getGameMode() != GameMode.CREATIVE) {
 			takeAwayFly(p);
 			return;
 		}
 		if (fac.isNone() && playersFlying.contains(p.getUniqueId())
+				&& p.getGameMode() != GameMode.CREATIVE) {
+			if(!p.hasPermission("factions.fly.bypassland"))
+			takeAwayFly(p);
+			return;
+		}
+		if (p.getLocation().getY() > MConf.get().flyMaxHeight
+				&& playersFlying.contains(p.getUniqueId())
 				&& p.getGameMode() != GameMode.CREATIVE) {
 			takeAwayFly(p);
 			return;
@@ -934,11 +949,21 @@ public class EngineMain extends EngineAbstract {
 			}
 			return;
 		}
+
+		Collection<Entity> closeEntities = loc.getWorld().getNearbyEntities(
+				loc, enemyX, enemyY, enemyZ);
+		Collection<Entity> closeAOE = loc.getWorld().getNearbyEntities(loc,
+				howCloseToAOE, 256, howCloseToAOE);
+
 		boolean closeEnemy = false;
 		for (Entity entity : closeEntities) {
 			if (!(entity instanceof Player))
 				continue;
 			Player player = (Player) entity;
+
+			if(player.getName().toLowerCase().startsWith("pvplogger"))
+				continue;
+
 			Faction opFaction = MPlayer.get(player).getFaction();
 			Rel relation = opFaction.getRelationTo(faction);
 			if (relation.getValue() >= Rel.TRUCE.getValue()
@@ -962,7 +987,7 @@ public class EngineMain extends EngineAbstract {
 			}
 		}
 		if (!closeEnemy && p.hasPermission("factions.fly")
-				&& (rel.getValue() >= Rel.ALLY.getValue())
+				&& (canGoInTerritory(rel, mp))
 				& !playersFlying.contains(p.getUniqueId())) {
 			p.sendMessage(ChatColor.translateAlternateColorCodes('&',
 					MConf.get().flyEnableMessage));
@@ -976,11 +1001,15 @@ public class EngineMain extends EngineAbstract {
 			if (!(entity instanceof Player))
 				continue;
 			Player player = (Player) entity;
+
+			if(player.getName().toLowerCase().startsWith("pvplogger"))
+				continue;
+
 			Faction opFaction = MPlayer.get(player).getFaction();
 			Rel relation = opFaction.getRelationTo(faction);
-			if (relation.getValue() >= Rel.ALLY.getValue()
+			if (relation.getValue() >= MConf.get().flyAOERelationMin.getValue()
 					&& player.hasPermission("factions.fly.aoe")) {
-				if (!closeEnemy && (rel.getValue() >= Rel.ALLY.getValue())
+				if (!closeEnemy && (canGoInTerritory(rel, mp))
 						& !playersFlying.contains(p.getUniqueId())) {
 					p.sendMessage(ChatColor.translateAlternateColorCodes('&',
 							MConf.get().flyEnableMessage));
@@ -997,6 +1026,10 @@ public class EngineMain extends EngineAbstract {
 		if (!foundAOE && playersFlyingAOE.contains(p.getUniqueId())
 				&& p.getGameMode() != GameMode.CREATIVE) {
 			takeAwayFly(p);
+		}
+		if(playersFlying.contains(p.getUniqueId()) || playersFlyingAOE.contains(p.getUniqueId())){
+			if(!p.getAllowFlight())
+				p.setAllowFlight(true);
 		}
 	}
 
@@ -1029,6 +1062,13 @@ public class EngineMain extends EngineAbstract {
 				e.setCancelled(true);
 			}
 		}
+	}
+
+	public boolean canGoInTerritory(Rel rel, MPlayer mPlayer){
+		if(mPlayer.getPlayer().hasPermission("factions.fly.bypassland"))
+			return true;
+
+		return rel.getValue() >= MConf.get().flyMinLocationRealtion.getValue();
 	}
 
 	// -------------------------------------------- //
@@ -2148,6 +2188,21 @@ public class EngineMain extends EngineAbstract {
 			if (is == null)
 				return;
 
+			if (is.getType() == Material.HOPPER) {
+				Block up = event.getBlock().getRelative(BlockFace.UP);
+				if (up.getType() == Material.CHEST){
+					if(up.getState() instanceof  Chest){
+						Chest c = (Chest) up.getState();
+						if (c.getInventory().getTitle()
+								.equalsIgnoreCase(ChatColor.DARK_AQUA + "Void Chest")){
+							p.sendMessage(ChatColor.RED + "You cannot place a hopper below a void chest!");
+							event.setCancelled(true);
+							return;
+						}
+					}
+				}
+			}
+
 			if (is.getType() != Material.CHEST)
 				return;
 
@@ -2158,7 +2213,12 @@ public class EngineMain extends EngineAbstract {
 				p.sendMessage(ChatColor.RED + "You cannot place a chest beside a void chest!");
 				return;
 			}
-			
+
+			if (b.getRelative(BlockFace.DOWN).getType() == Material.HOPPER){
+				event.setCancelled(true);
+				p.sendMessage(ChatColor.RED + "You cannot place a voidchest above a hopper!");
+				return;
+			}
 			if (!is.hasItemMeta())
 				return;
 
@@ -2298,7 +2358,8 @@ public class EngineMain extends EngineAbstract {
 
 			event.getBlock().setType(Material.AIR);
 
-			event.getBlock().getWorld()
+			if(event.getPlayer().getGameMode() != GameMode.CREATIVE)
+				event.getBlock().getWorld()
 					.dropItemNaturally(event.getBlock().getLocation(), is);
 
 			return;
@@ -2431,6 +2492,13 @@ public class EngineMain extends EngineAbstract {
 		if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
 			if (e.getClickedBlock() == null)
 				return;
+			Block block = e.getClickedBlock();
+			if(block!= null)
+			if(block.getState() instanceof Chest){
+				if(Factions.get().isVoidchest(block.getLocation()) &! e.getPlayer().isSneaking()){
+					e.getPlayer().sendMessage(ChatColor.RED + "You cannot open a voidchest!");
+					e.setCancelled(true);}
+			}
 			if (e.getPlayer().getItemInHand().getType() != Material.MONSTER_EGG)
 				return;
 			Block potentialBlock = e.getClickedBlock().getRelative(

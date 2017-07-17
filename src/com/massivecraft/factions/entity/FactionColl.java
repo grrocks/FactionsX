@@ -114,8 +114,9 @@ public class FactionColl extends Coll<Faction>
 		faction.setFlag(MFlag.getFlagFirespread(), true);
 		faction.setFlag(MFlag.getFlagEndergrief(), true);
 		faction.setFlag(MFlag.getFlagZombiegrief(), true);
-		
+
 		faction.setPermittedRelations(MPerm.getPermBuild(), Rel.LEADER, Rel.COLEADER, Rel.OFFICER, Rel.MEMBER, Rel.RECRUIT, Rel.ALLY, Rel.TRUCE, Rel.NEUTRAL, Rel.ENEMY);
+		faction.setPermittedRelations(MPerm.getPermEssSethome(), Rel.LEADER, Rel.COLEADER, Rel.OFFICER, Rel.MEMBER, Rel.RECRUIT, Rel.ALLY, Rel.TRUCE, Rel.NEUTRAL, Rel.ENEMY);
 		faction.setPermittedRelations(MPerm.getPermDoor(), Rel.LEADER, Rel.COLEADER, Rel.OFFICER, Rel.MEMBER, Rel.RECRUIT, Rel.ALLY, Rel.TRUCE, Rel.NEUTRAL, Rel.ENEMY);
 		faction.setPermittedRelations(MPerm.getPermContainer(), Rel.LEADER, Rel.COLEADER, Rel.OFFICER, Rel.MEMBER, Rel.RECRUIT, Rel.ALLY, Rel.TRUCE, Rel.NEUTRAL, Rel.ENEMY);
 		faction.setPermittedRelations(MPerm.getPermButton(), Rel.LEADER, Rel.COLEADER, Rel.OFFICER, Rel.MEMBER, Rel.RECRUIT, Rel.ALLY, Rel.TRUCE, Rel.NEUTRAL, Rel.ENEMY);

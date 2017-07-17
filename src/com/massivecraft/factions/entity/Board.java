@@ -393,7 +393,7 @@ public class Board extends Entity<Board> implements BoardInterface
 
 				PS herePs = topLeftPs.plusChunkCoords(dx, dz);
 				Faction hereFaction = this.getFactionAt(herePs);
-				if (hereFaction.isNone()) {
+				if (hereFaction == null || hereFaction.isNone()) {
 					if (newLine) {
 						if (ret.size() == 1) {
 							compassLine = true;
@@ -449,9 +449,11 @@ public class Board extends Entity<Board> implements BoardInterface
 						else
 							rowJSON.text(hereFaction.getColorTo(observer) + ""
 									+ fchar);
+					} else if ((ret.size() <= 3) && i<3){
+						i++;
 					} else
 						rowJSON.then(hereFaction.getColorTo(observer) + ""
-								+ fchar);
+							+ fchar);
 				}
 				newLine = false;
 			}

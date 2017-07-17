@@ -26,7 +26,7 @@ public class CmdFactionsWild extends FactionsCommand implements Listener {
 	List<String> enabledWorlds = MConf.get().wildEnabledWorlds.get("worlds");
 	private int warmup = MConf.get().wildWarmupSeconds;
 	private int cooldown = MConf.get().wildCooldownSeconds;
-	public static Map<UUID, Long> commandCooldown = new HashMap<UUID, Long>();
+	public Map<UUID, Long> commandCooldown = new HashMap<UUID, Long>();
 
 	public CmdFactionsWild() {
 		aliases.add("wild");

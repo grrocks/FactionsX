@@ -803,7 +803,10 @@ public class MConf extends Entity<MConf> {
 
 	public int claimChunkMaxDis = 15;
 
+	public Rel flyAOERelationMin = Rel.ALLY;
+	public Rel flyMinLocationRealtion = Rel.ALLY;
 	public int flyAOEDistance = 50;
+	public int flyMaxHeight = 260;
 	public int flyCancelDistanceX = 30;
 	public int flyCancelDistanceY = 255;
 	public int flyCancelDistanceZ = 30;

@@ -3,6 +3,7 @@ package com.massivecraft.factions.cmd;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.massivecraft.massivecore.command.requirement.RequirementHasPerm;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -20,6 +21,7 @@ public class CmdFactionsVoidchest extends FactionsCommand {
 		this.addAliases("voidchest");
 
 		this.addRequirements(RequirementIsPlayer.get());
+		this.addRequirements(RequirementHasPerm.get("factions.voidchest"));
 	}
 
 	@Override
