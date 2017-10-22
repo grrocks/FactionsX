@@ -465,13 +465,13 @@ public class EngineMain extends EngineAbstract {
 			return;
 		if (e.getInitiator().getType() != InventoryType.HOPPER){
 			if(e.getInitiator().getType() == InventoryType.CHEST
-					&& e.getInitiator().getTitle().equals(ChatColor.DARK_AQUA + "Void Chest"))
+					&& e.getInitiator().getTitle().equals(ChatColor.RED + "" + ChatColor.BOLD + "VOID CHEST"))
 				e.setCancelled(true);
 			return;
 		}
 
 		if (!e.getDestination().getTitle()
-				.equals(ChatColor.DARK_AQUA + "Void Chest"))
+				.equals(ChatColor.RED + "" + ChatColor.BOLD + "VOID CHEST"))
 			return;
 
 		if (!MConf.get().voidChestItemsSellPricePerItem.containsKey(e.getItem()
@@ -535,8 +535,14 @@ public class EngineMain extends EngineAbstract {
 				PS.valueOf(player));
 
 		if (!MPerm.getPermLogin().has(mplayer, facAt, false)) {
-			if (System.currentTimeMillis() > mplayer
-					.getLastActivityMillisInLand()) {
+			if (System.currentTimeMillis() > mplayer.getLastActivityMillisInLand()) {
+				Bukkit.getServer().dispatchCommand(
+						Bukkit.getServer().getConsoleSender(),
+						"spawn " + mplayer.getPlayer().getName());
+				Bukkit.getServer().dispatchCommand(
+						Bukkit.getServer().getConsoleSender(),
+						"spawn " + mplayer.getPlayer().getName());
+				mplayer.message(ChatColor.RED + "Checking for logout exploits..");
 				Bukkit.getServer().dispatchCommand(
 						Bukkit.getServer().getConsoleSender(),
 						"spawn " + mplayer.getPlayer().getName());
@@ -879,7 +885,6 @@ public class EngineMain extends EngineAbstract {
 
 			// ... the relation may forbid ...
 			if (oldFaction.getRelationTo(newFaction).isAtLeast(Rel.TRUCE)) {
-				mplayer.msg("<b>You can't claim this land due to your relation with the current owner.");
 				event.setCancelled(true);
 				return;
 			}
@@ -1427,19 +1432,6 @@ public class EngineMain extends EngineAbstract {
 		// You can not hurt neutrals in their own territory.
 		boolean ownTerritory = mdefender.isInOwnTerritory();
 
-		if (mdefender.hasFaction() && ownTerritory && relation == Rel.NEUTRAL) {
-			ret = falseUnlessDisallowedPvpEventCancelled(attacker, defender,
-					event);
-			if (!ret && notify) {
-				uattacker
-						.msg("<i>You can't hurt %s<i> in their own territory unless you declare them as an enemy.",
-								mdefender.describeTo(uattacker));
-				mdefender.msg("%s<i> tried to hurt you.",
-						uattacker.describeTo(mdefender, true));
-			}
-			return ret;
-		}
-
 		return true;
 	}
 
@@ -1776,11 +1768,11 @@ public class EngineMain extends EngineAbstract {
 			ItemStack is = new ItemStack(Material.CHEST);
 			ItemMeta im = is.getItemMeta();
 
-			im.setDisplayName(ChatColor.DARK_AQUA + "Void Chest");
+			im.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "VOID CHEST");
 
 			List<String> lore = new ArrayList<String>();
 
-			lore.add(ChatColor.DARK_AQUA + "This is a void chest!");
+			lore.add(ChatColor.YELLOW + "Sells items automatically.");
 
 			im.setLore(lore);
 
@@ -2014,7 +2006,7 @@ public class EngineMain extends EngineAbstract {
 						e.getPlayer()
 								.sendMessage(
 										ChatColor.RED
-												+ "Another faction has claimed over your home! You will not be able to go to this home!");
+												+ "Another faction has claimed over your home, it's no longer usable.");
 
 					}
 				} else
@@ -2049,7 +2041,7 @@ public class EngineMain extends EngineAbstract {
 					e.getPlayer()
 							.sendMessage(
 									ChatColor.RED
-											+ "Another faction has claimed over your home! You will not be able to go to this home!");
+											+ "Another faction has claimed over your home, it's no longer usable.");
 				}
 			}
 		}
@@ -2194,8 +2186,8 @@ public class EngineMain extends EngineAbstract {
 					if(up.getState() instanceof  Chest){
 						Chest c = (Chest) up.getState();
 						if (c.getInventory().getTitle()
-								.equalsIgnoreCase(ChatColor.DARK_AQUA + "Void Chest")){
-							p.sendMessage(ChatColor.RED + "You cannot place a hopper below a void chest!");
+								.equalsIgnoreCase(ChatColor.RED + "" + ChatColor.BOLD + "VOID CHEST")){
+							p.sendMessage(ChatColor.RED + "You cannot place a hopper below a void chest.");
 							event.setCancelled(true);
 							return;
 						}
@@ -2210,15 +2202,10 @@ public class EngineMain extends EngineAbstract {
 
 			if(isBesideVoidChest(b)){
 				event.setCancelled(true);
-				p.sendMessage(ChatColor.RED + "You cannot place a chest beside a void chest!");
+				p.sendMessage(ChatColor.RED + "You cannot place chests by a void chest.");
 				return;
 			}
 
-			if (b.getRelative(BlockFace.DOWN).getType() == Material.HOPPER){
-				event.setCancelled(true);
-				p.sendMessage(ChatColor.RED + "You cannot place a voidchest above a hopper!");
-				return;
-			}
 			if (!is.hasItemMeta())
 				return;
 
@@ -2230,7 +2217,7 @@ public class EngineMain extends EngineAbstract {
 			if (!im.hasDisplayName())
 				return;
 
-			if (!im.getDisplayName().equals(ChatColor.DARK_AQUA + "Void Chest"))
+			if (!im.getDisplayName().equals(ChatColor.RED + "" + ChatColor.BOLD + "VOID CHEST"))
 				return;
 
 			List<String> lore = im.getLore();
@@ -2239,7 +2226,7 @@ public class EngineMain extends EngineAbstract {
 				return;
 
 			if (lore.get(0).equals(
-					ChatColor.DARK_AQUA + "This is a void chest!")) {
+					ChatColor.YELLOW + "Sells items automatically.")) {
 				Factions.get().voidchests.add(new Voidchest(event.getBlock()
 						.getLocation()));
 			}
@@ -2280,7 +2267,7 @@ public class EngineMain extends EngineAbstract {
 			Chest c = (Chest) b.getState();
 
 			if (!c.getInventory().getTitle()
-					.equalsIgnoreCase(ChatColor.DARK_AQUA + "Void Chest"))
+					.equalsIgnoreCase(ChatColor.RED + "" + ChatColor.BOLD + "VOID CHEST"))
 				continue;
 
 			return true;
@@ -2338,17 +2325,17 @@ public class EngineMain extends EngineAbstract {
 			Chest c = (Chest) event.getBlock().getState();
 
 			if (!c.getInventory().getTitle()
-					.equalsIgnoreCase(ChatColor.DARK_AQUA + "Void Chest"))
+					.equalsIgnoreCase(ChatColor.RED + "" + ChatColor.BOLD + "VOID CHEST"))
 				return;
 
 			ItemStack is = new ItemStack(Material.CHEST);
 			ItemMeta im = is.getItemMeta();
 
-			im.setDisplayName(ChatColor.DARK_AQUA + "Void Chest");
+			im.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "VOID CHEST");
 
 			List<String> lore = new ArrayList<String>();
 
-			lore.add(ChatColor.DARK_AQUA + "This is a void chest!");
+			lore.add(ChatColor.YELLOW + "Sells items automatically.");
 
 			im.setLore(lore);
 
@@ -2496,7 +2483,7 @@ public class EngineMain extends EngineAbstract {
 			if(block!= null)
 			if(block.getState() instanceof Chest){
 				if(Factions.get().isVoidchest(block.getLocation()) &! e.getPlayer().isSneaking()){
-					e.getPlayer().sendMessage(ChatColor.RED + "You cannot open a voidchest!");
+					e.getPlayer().sendMessage(ChatColor.RED + "You cannot open void chests.");
 					e.setCancelled(true);}
 			}
 			if (e.getPlayer().getItemInHand().getType() != Material.MONSTER_EGG)
@@ -2565,7 +2552,7 @@ public class EngineMain extends EngineAbstract {
 				return;
 			event.setCancelled(true);
 			event.getPlayer().sendMessage(
-					ChatColor.RED + "The creeper needs more head room!");
+					ChatColor.RED + "The creeper needs more room to be spawned.");
 		}
 
 		if (event.getAction() != Action.LEFT_CLICK_BLOCK)
