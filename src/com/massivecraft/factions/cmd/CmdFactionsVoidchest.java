@@ -30,7 +30,7 @@ public class CmdFactionsVoidchest extends FactionsCommand {
 				MConf.get().voidchestCost)) {
 			if (me.getInventory().firstEmpty() == -1) {
 				me.sendMessage(ChatColor.RED
-						+ "Please leave 1 inventory space for a void chest!");
+						+ "Please leave 1 inventory space for a void chest.");
 				return;
 			}
 			new MoneyMixinVault().getEconomy().withdrawPlayer(me.getPlayer(),
@@ -39,11 +39,11 @@ public class CmdFactionsVoidchest extends FactionsCommand {
 			ItemStack is = new ItemStack(Material.CHEST);
 			ItemMeta im = is.getItemMeta();
 
-			im.setDisplayName(ChatColor.DARK_AQUA + "Void Chest");
+			im.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "VOID CHEST");
 
 			List<String> lore = new ArrayList<String>();
 
-			lore.add(ChatColor.DARK_AQUA + "This is a void chest!");
+			lore.add(ChatColor.YELLOW + "Sells items automatically.");
 
 			im.setLore(lore);
 
@@ -51,10 +51,10 @@ public class CmdFactionsVoidchest extends FactionsCommand {
 
 			me.getInventory().addItem(is);
 
-			me.sendMessage(ChatColor.AQUA + "You have received a void chest!");
+			me.sendMessage(ChatColor.YELLOW + "Given void chest.");
 		} else
-			me.sendMessage(ChatColor.RED + "You need $"
-					+ MConf.get().voidchestCost + " to get a void chest");
+			me.sendMessage(ChatColor.RED + "You need " + ChatColor.YELLOW + "$"
+					+ MConf.get().voidchestCost + ChatColor.RED + " to purchase a Void Chest.");
 	}
 
 }
